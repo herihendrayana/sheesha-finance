@@ -1,0 +1,30 @@
+{
+  "name": "nrgy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivam3012/NRGY.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shivam3012/NRGY/issues"
+  },
+  "homepage": "https://github.com/shivam3012/NRGY#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.3.0",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0"
+  }
+}
