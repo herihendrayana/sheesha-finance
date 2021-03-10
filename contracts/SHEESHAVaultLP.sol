@@ -58,6 +58,7 @@ contract SHEESHAVaultLP is Ownable {
     uint256 public constant percentageDivider = 10000;
     //20000 sheesha 20% of supply
     uint256 public lpRewards = 20000e18;
+    address public feeWallet = 0xd563ec07543d20fB24de0dAd6Ac548A09A0c4873;
 
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
@@ -211,6 +212,7 @@ contract SHEESHAVaultLP is Ownable {
             }
             uint256 fees = _amount.mul(feePercent).div(100);
             user.amount = user.amount.sub(_amount);
+            pool.lpToken.safeTransfer(feeWallet, fees);
             pool.lpToken.safeTransfer(address(msg.sender), _amount.sub(fees));
         }
         user.rewardDebt = user.amount.mul(pool.accSheeshaPerShare).div(1e12);
