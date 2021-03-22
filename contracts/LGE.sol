@@ -88,7 +88,7 @@ contract LGE is SHEESHA {
     }
 
     //anyone/admin will call this function after 2 weeks to mint LGE
-    // Sends all avaibile balances and mints LP tokens
+    // Sends all available balances and mints LP tokens
     // Possible ways this could break addressed
     // 1) Multiple calls and resetting amounts - addressed with boolean
     // 2) Failed WETH wrapping/unwrapping addressed with checks
@@ -123,7 +123,7 @@ contract LGE is SHEESHA {
     //people will send ETH to this function for LGE
     // Possible ways this could break addressed
     // 1) Adding liquidity after generaion is over - added require
-    // 2) Overflow from uint - impossible there isnt that much ETH aviable
+    // 2) Overflow from uint - impossible there isnt that much ETH available
     // 3) Depositing 0 - not an issue it will just add 0 to tally
     function addLiquidity() public payable {
         require(
@@ -131,7 +131,7 @@ contract LGE is SHEESHA {
             "Liquidity Generation Event over"
         );
         ethContributed[msg.sender] += msg.value; // Overflow protection from safemath is not neded here
-        totalETHContributed = totalETHContributed.add(msg.value); // for front end display during LGE. This resets with definietly correct balance while calling pair.
+        totalETHContributed = totalETHContributed.add(msg.value); // for front end display during LGE. This resets with definitely correct balance while calling pair.
         if(!isUserEisting(msg.sender)) {
             userList[userCount] = msg.sender;
             userCount++;
