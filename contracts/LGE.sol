@@ -36,6 +36,7 @@ contract LGE is SHEESHA {
     mapping(address => uint256) public ethContributed;
     mapping(address => bool) public claimed;
     mapping(uint256 => address) public userList;
+    mapping(address => bool) internal isExisting;
 
     event LiquidityAddition(address indexed dst, uint256 value);
     event LPTokenClaimed(address dst, uint256 value);
@@ -132,8 +133,11 @@ contract LGE is SHEESHA {
         );
         ethContributed[msg.sender] += msg.value; // Overflow protection from safemath is not neded here
         totalETHContributed = totalETHContributed.add(msg.value); // for front end display during LGE. This resets with definietly correct balance while calling pair.
-        userList[userCount] = msg.sender;
-        userCount++;
+        if(!isUserEisting(msg.sender)) {
+            userList[userCount] = msg.sender;
+            userCount++;
+            isExisting[msg.sender] = true;
+        }
         emit LiquidityAddition(msg.sender, msg.value);
     }
 
@@ -168,5 +172,13 @@ contract LGE is SHEESHA {
         returns (uint256 amountLPToTransfer)
     {
         return ethContributed[_who].mul(LPperETHUnit).div(1e18);
+    }
+
+    function isUserEisting(address _who)
+        public
+        view
+        returns (bool)
+    {
+        return isExisting[_who];
     }
 }
