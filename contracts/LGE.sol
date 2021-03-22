@@ -79,7 +79,7 @@ contract LGE is SHEESHA {
         return contractStartTimestamp.add(14 days) > block.timestamp;
     }
 
-    function createUniswapPairMainnet() public returns (address) {
+    function createUniswapPairMainnet() internal returns (address) {
         require(SHEESHAxWETHPair == address(0), "Token: pool already created");
         SHEESHAxWETHPair = uniswapFactory.createPair(
             address(uniswapRouterV2.WETH()),
