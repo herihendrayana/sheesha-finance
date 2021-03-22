@@ -31,7 +31,6 @@ contract LGE is SHEESHA {
     //user count
     uint256 public userCount;
     ISHEESHAGlobals public sheeshaGlobals;
-    uint256 public stakeCount;
 
     mapping(address => uint256) public ethContributed;
     mapping(address => bool) public claimed;
