@@ -14,8 +14,8 @@ contract SHEESHA is ERC20Burnable, Ownable {
     address public teamAddress;
     address public marketingAddress;
     address public reserveAddress;
-    uint256 public vaultTransferDone;
-    uint256 public vaultLPTransferDone;
+    bool public vaultTransferDone;
+    bool public vaultLPTransferDone;
 
     // 15% team (4% monthly unlock over 25 months)
     // 10% dev
