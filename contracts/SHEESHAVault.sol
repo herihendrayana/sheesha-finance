@@ -70,6 +70,7 @@ contract SHEESHAVault is Ownable {
     ) {
         sheesha = _sheesha;
         startBlock = block.number;
+        IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
     }
 
     function poolLength() external view returns (uint256) {

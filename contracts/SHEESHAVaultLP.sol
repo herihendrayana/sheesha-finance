@@ -58,7 +58,7 @@ contract SHEESHAVaultLP is Ownable {
     uint256 public constant percentageDivider = 10000;
     //20000 sheesha 20% of supply
     uint256 public lpRewards = 20000e18;
-    address public feeWallet = 0xd563ec07543d20fB24de0dAd6Ac548A09A0c4873;
+    address public feeWallet = 0x5483d944038189B4232d1E35367420989E2C3762;
 
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
@@ -74,6 +74,7 @@ contract SHEESHAVaultLP is Ownable {
     ) {
         sheesha = _sheesha;
         startBlock = block.number;
+        IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
     }
 
     function poolLength() external view returns (uint256) {
