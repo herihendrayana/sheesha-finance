@@ -14,6 +14,8 @@ contract SHEESHA is ERC20Burnable, Ownable {
     address public teamAddress;
     address public marketingAddress;
     address public reserveAddress;
+    uint256 public vaultTransferDone;
+    uint256 public vaultLPTransferDone;
 
     // 15% team (4% monthly unlock over 25 months)
     // 10% dev
@@ -37,11 +39,15 @@ contract SHEESHA is ERC20Burnable, Ownable {
 
     //one time only
     function transferVaultRewards(address _vaultAddress) public onlyOwner {
+        require(!vaultTransferDone, "Already transferred");
         _transfer(address(this), _vaultAddress, initialSupply.mul(10).div(100));
+        vaultTransferDone = true;
     }
 
     //one time only
-    function transferVaultLPewards(address _vaultLPAddress) public onlyOwner {
+    function transferVaultLPRewards(address _vaultLPAddress) public onlyOwner {
+        require(!vaultLPTransferDone, "Already transferred");
         _transfer(address(this), _vaultLPAddress, initialSupply.mul(20).div(100));
+        vaultLPTransferDone = true;
     }
 }

@@ -169,20 +169,4 @@ contract LGE is SHEESHA {
     {
         return ethContributed[_who].mul(LPperETHUnit).div(1e18);
     }
-
-    // Emergency drain in case of a bug
-    // Adds all funds to owner to refund people
-    // Designed to be as simple as possible
-    function emergencyDrain24hAfterLiquidityGenerationEventIsDone()
-        public
-        payable
-        onlyOwner
-    {
-        require(
-            contractStartTimestamp.add(15 days) < block.timestamp,
-            "Liquidity generation grace period still ongoing"
-        ); // About 24h after liquidity generation happens
-        msg.sender.transfer(address(this).balance);
-        _transfer(address(this), msg.sender, balanceOf(address(this)));
-    }
 }
