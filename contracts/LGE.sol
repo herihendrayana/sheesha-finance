@@ -132,7 +132,7 @@ contract LGE is SHEESHA {
         );
         ethContributed[msg.sender] += msg.value; // Overflow protection from safemath is not neded here
         totalETHContributed = totalETHContributed.add(msg.value); // for front end display during LGE. This resets with definitely correct balance while calling pair.
-        if(!isUserEisting(msg.sender)) {
+        if(!isUserExisting(msg.sender)) {
             userList[userCount] = msg.sender;
             userCount++;
             isExisting[msg.sender] = true;
@@ -173,7 +173,7 @@ contract LGE is SHEESHA {
         return ethContributed[_who].mul(LPperETHUnit).div(1e18);
     }
 
-    function isUserEisting(address _who)
+    function isUserExisting(address _who)
         public
         view
         returns (bool)
