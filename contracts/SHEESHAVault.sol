@@ -87,7 +87,7 @@ contract SHEESHAVault is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(
             PoolInfo({

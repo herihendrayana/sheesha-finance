@@ -91,7 +91,7 @@ contract SHEESHAVaultLP is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(
             PoolInfo({
@@ -253,6 +253,10 @@ contract SHEESHAVaultLP is Ownable {
 
     function getElapsedMonth(uint256 checkpoint) public view returns(uint256) {
         return ((block.timestamp.sub(checkpoint)).div(30 days)).add(1);
+    }
+
+    function changeFeeWallet(address _feeWallet) external onlyOwner {
+        feeWallet = _feeWallet;
     }
 
 }
