@@ -140,21 +140,7 @@ contract SHEESHAVault is Ownable {
 
     // Deposit LP tokens to MasterChef for SHEESHA allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accSheeshaPerShare).div(1e12).sub(user.rewardDebt);
-            safeSheeshaTransfer(msg.sender, pending);
-        }
-        //Transfer in the amounts from user
-        // save gas
-        if(_amount > 0) {
-            pool.token.safeTransferFrom(address(msg.sender), address(this), _amount);
-            user.amount = user.amount.add(_amount);
-        }
-        user.rewardDebt = user.amount.mul(pool.accSheeshaPerShare).div(1e12);
-        emit Deposit(msg.sender, _pid, _amount);
+        _deposit(msg.sender, _pid, _amount);
     }
 
     // stake from LGE directly
@@ -163,6 +149,10 @@ contract SHEESHAVault is Ownable {
     // [x] Does user that its deposited for update correcty?
     // [x] Does the depositor get their tokens decreased
     function depositFor(address _depositFor, uint256 _pid, uint256 _amount) public {
+        _deposit(_depositFor, _pid, _amount);
+    }
+
+    function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal {
         // requires no allowances
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_depositFor];

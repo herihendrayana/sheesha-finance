@@ -144,24 +144,7 @@ contract SHEESHAVaultLP is Ownable {
 
     // Deposit LP tokens to MasterChef for SHEESHA allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        if(!isActive(_pid, msg.sender)) {
-            user.checkpoint = block.timestamp;
-        }
-        if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accSheeshaPerShare).div(1e12).sub(user.rewardDebt);
-            safeSheeshaTransfer(msg.sender, pending);
-        }
-        //Transfer in the amounts from user
-        // save gas
-        if(_amount > 0) {
-            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-            user.amount = user.amount.add(_amount);
-        }
-        user.rewardDebt = user.amount.mul(pool.accSheeshaPerShare).div(1e12);
-        emit Deposit(msg.sender, _pid, _amount);
+        _deposit(msg.sender, _pid, _amount);
     }
 
     // stake from LGE directly
@@ -170,6 +153,10 @@ contract SHEESHAVaultLP is Ownable {
     // [x] Does user that its deposited for update correcty?
     // [x] Does the depositor get their tokens decreased
     function depositFor(address _depositFor, uint256 _pid, uint256 _amount) public {
+        _deposit(_depositFor, _pid, _amount);
+    }
+
+    function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal {
         // requires no allowances
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_depositFor];
@@ -177,6 +164,7 @@ contract SHEESHAVaultLP is Ownable {
         updatePool(_pid);
 
         if(!isActive(_pid, _depositFor)) {
+            user.status = true;
             user.checkpoint = block.timestamp;
         }
 
@@ -192,7 +180,6 @@ contract SHEESHAVaultLP is Ownable {
 
         user.rewardDebt = user.amount.mul(pool.accSheeshaPerShare).div(1e12); /// This is deposited for address
         emit Deposit(_depositFor, _pid, _amount);
-
     }
 
     // Withdraw LP tokens or claim rewrads if amount is 0
@@ -265,7 +252,7 @@ contract SHEESHAVaultLP is Ownable {
     }
 
     function getElapsedMonth(uint256 checkpoint) public view returns(uint256) {
-        return (block.timestamp.sub(checkpoint)).div(30 days);
+        return ((block.timestamp.sub(checkpoint)).div(30 days)).add(1);
     }
 
 }
