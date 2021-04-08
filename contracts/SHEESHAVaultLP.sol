@@ -196,7 +196,7 @@ contract SHEESHAVaultLP is Ownable {
             //2 years
             if(user.checkpoint.add(730 days) <= block.timestamp) {
                 //4-> unstake fee interval
-                feePercent = uint256(100).sub(getElapsedMonth(user.checkpoint).mul(4));
+                feePercent = uint256(100).sub(getElapsedMonthsCount(user.checkpoint).mul(4));
             }
             uint256 fees = _amount.mul(feePercent).div(100);
             user.amount = user.amount.sub(_amount);
@@ -251,7 +251,7 @@ contract SHEESHAVaultLP is Ownable {
         return userInfo[_pid][_user].status;
     }
 
-    function getElapsedMonth(uint256 checkpoint) public view returns(uint256) {
+    function getElapsedMonthsCount(uint256 checkpoint) public view returns(uint256) {
         return ((block.timestamp.sub(checkpoint)).div(30 days)).add(1);
     }
 
