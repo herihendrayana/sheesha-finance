@@ -41,7 +41,6 @@ contract SHEESHAVaultLP is Ownable {
     // The SHEESHA TOKEN!
     SHEESHA public sheesha;
     
-
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes  tokens.
@@ -59,7 +58,6 @@ contract SHEESHAVaultLP is Ownable {
     //20000 sheesha 20% of supply
     uint256 public lpRewards = 20000e18;
     address public feeWallet = 0x5483d944038189B4232d1E35367420989E2C3762;
-
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
