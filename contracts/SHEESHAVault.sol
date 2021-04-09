@@ -157,7 +157,6 @@ contract SHEESHAVault is Ownable {
     }
 
     function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal {
-        // requires no allowances
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_depositFor];
 
