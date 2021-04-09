@@ -82,7 +82,7 @@ contract SHEESHAVault is Ownable {
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
-    // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    // DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     function add(
         uint256 _allocPoint,
         IERC20 _token,
@@ -187,8 +187,8 @@ contract SHEESHAVault is Ownable {
         safeSheeshaTransfer(msg.sender, pending);
         if(_amount > 0) {
             user.amount = user.amount.sub(_amount);
-            uint256 fees = _amount.mul(4).div(100); //4%
-            uint256 burnAmount = fees.mul(1).div(100); //1%
+            uint256 fees = _amount.mul(4).div(100);
+            uint256 burnAmount = fees.mul(1).div(100);
             sheesha.burn(burnAmount);
             //add tax into rewards distribution
             tokenRewards = tokenRewards.add(fees.sub(burnAmount));
