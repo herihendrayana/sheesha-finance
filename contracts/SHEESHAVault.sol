@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./SHEESHA.sol";
 
-contract SHEESHAVault is Ownable {
+contract SHEESHAVault is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -156,7 +157,7 @@ contract SHEESHAVault is Ownable {
         _deposit(_depositFor, _pid, _amount);
     }
 
-    function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal {
+    function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_depositFor];
 
