@@ -54,7 +54,7 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
     uint256 public constant sheeshaPerBlock = 1;
     //handle case till 0.01(2 decimal places)
     uint256 public constant percentageDivider = 10000;
-    //10000 sheesha 10% of supply
+    //10,000 sheesha 10% of supply
     uint256 public tokenRewards = 10000e18;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);

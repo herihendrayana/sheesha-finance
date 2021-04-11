@@ -56,7 +56,7 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
     uint256 public constant sheeshaPerBlock = 1;
     //handle case till 0.01(2 decimal places)
     uint256 public constant percentageDivider = 10000;
-    //20000 sheesha 20% of supply
+    //20,000 sheesha 20% of supply
     uint256 public lpRewards = 20000e18;
     address public feeWallet = 0x5483d944038189B4232d1E35367420989E2C3762;
 
