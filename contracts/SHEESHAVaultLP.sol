@@ -204,7 +204,7 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    // Withdraw without caring about rewards. EMERGENCY ONLY
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
@@ -221,7 +221,7 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         lpRewards = lpRewards.add(_amount);
     }
 
-    // Safe sheesha transfer function, just in case if rounding error causes pool to not have enough SHEESHAs.
+    // Safe sheesha transfer function, just in case if rounding error causes pool to not have enough SHEESHAs
     function safeSheeshaTransfer(address _to, uint256 _amount) internal {
         uint256 sheeshaBal = sheesha.balanceOf(address(this));
         if (_amount > sheeshaBal) {
