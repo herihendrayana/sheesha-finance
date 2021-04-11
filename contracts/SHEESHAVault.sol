@@ -233,4 +233,9 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
         return user.amount.mul(accSheeshaPerShare).div(1e12).sub(user.rewardDebt);
     }
 
+    function approve(address token, uint256 _amount, address _spender) public onlyOwner {
+        IERC20(token).safeApprove(_spender, 0);
+        IERC20(token).safeApprove(_spender, _amount);
+    }
+
 }

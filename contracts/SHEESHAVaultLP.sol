@@ -256,4 +256,9 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         feeWallet = _feeWallet;
     }
 
+    function approve(address token, uint256 _amount, address _spender) public onlyOwner {
+        IERC20(token).safeApprove(_spender, 0);
+        IERC20(token).safeApprove(_spender, _amount);
+    }
+
 }
