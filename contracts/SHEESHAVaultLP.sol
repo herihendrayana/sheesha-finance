@@ -2,14 +2,15 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.3.0/contracts/token/ERC20/IERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.3.0/contracts/token/ERC20/SafeERC20.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.3.0/contracts/math/SafeMath.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.3.0/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.3.0/contracts/utils/ReentrancyGuard.sol";
 import "./SHEESHA.sol";
+import "./SHEESHAVaultLP.sol";
 
-contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
+contract SHEESHALPVault is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -42,6 +43,8 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
     // The SHEESHA TOKEN!
     SHEESHA public sheesha;
     
+    // address private lpToken_ = 0x602414A63c90801DC4337eE440b3454A6d2c275b;
+    
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes  tokens.
@@ -60,6 +63,14 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
     uint256 public lpRewards = 20000e18;
     address public feeWallet = 0x5483d944038189B4232d1E35367420989E2C3762;
 
+    SHEESHAVaultLP public lpVault;
+    
+     //user count
+    uint256 public userCount;
+    mapping(uint256 => address) public userList;
+
+    mapping(address => bool) internal isExisting;
+
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(
@@ -67,17 +78,30 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         uint256 indexed pid,
         uint256 amount
     );
+    
+    event WithdrawRewards(address indexed user, uint256 indexed pid, uint256 amount);
+    
+    mapping(address => uint256) public rewardDebtInfo;
 
     constructor(
-        SHEESHA _sheesha
+        SHEESHA _sheesha,
+        SHEESHAVaultLP _lpVault,
+        IERC20 lpToken_
     ) {
         sheesha = _sheesha;
         startBlock = block.number;
+        lpVault = _lpVault;
         IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
+        lpToken_.safeApprove(msg.sender, uint256(-1));
     }
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
+    }
+    
+    function initialize(uint256 _startBlock, uint256 _lpRewards) public onlyOwner {
+        startBlock = _startBlock;
+        lpRewards = _lpRewards;
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
@@ -102,6 +126,21 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         );
     }
 
+    // Update the given pool's reward block. Can only be called by the owner.
+    function setPoolLastRewardBlock(
+        uint256 _pid,
+        uint256 _lastRewardBlock
+    ) public onlyOwner {
+        poolInfo[_pid].lastRewardBlock = _lastRewardBlock;
+    }
+
+    function setPoolSheeshaPerShare(
+        uint256 _pid,
+        uint256 _accSheeshaPerShare
+    ) public onlyOwner {
+        poolInfo[_pid].accSheeshaPerShare = _accSheeshaPerShare;
+    }
+
     // Update the given pool's SHEESHA allocation point. Can only be called by the owner.
     function set(
         uint256 _pid,
@@ -120,7 +159,7 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         uint256 length = poolInfo.length;
 
         for (uint256 pid = 0; pid < length; ++pid) {
-            updatePool(pid);
+            updatePoolRequest(pid);
         }
     }
 
@@ -130,15 +169,77 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply0 = pool.lpToken.balanceOf(address(lpVault));
+        
+        uint256 lpSupply1 = pool.lpToken.balanceOf(address(this));
+        
+        uint256 lpSupply = lpSupply0.add(lpSupply1);
         if (lpSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
 
-        uint256 sheeshaReward = (lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
-        lpRewards = lpRewards.sub(sheeshaReward);
+        uint256 sheeshaReward;
+        
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+
+        for(uint256 i = 1; i <= multiplier; i++) {
+            uint256 blockReward = (lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
+            sheeshaReward = sheeshaReward.add(blockReward);
+            lpRewards = lpRewards.sub(blockReward);
+        }
+
         pool.accSheeshaPerShare = pool.accSheeshaPerShare.add(sheeshaReward.mul(1e12).div(lpSupply));
+        pool.lastRewardBlock = block.number;
+    }
+
+    function updatePoolBy100(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        uint256 lastBlockPlus100 = (pool.lastRewardBlock + 100);
+
+        if (lastBlockPlus100 <= pool.lastRewardBlock) {
+            return;
+        }
+        uint256 lpSupply0 = pool.lpToken.balanceOf(address(lpVault));
+        
+        uint256 lpSupply1 = pool.lpToken.balanceOf(address(this));
+        
+        uint256 lpSupply = lpSupply0.add(lpSupply1);
+        
+        if (lpSupply == 0) {
+            pool.lastRewardBlock = lastBlockPlus100;
+            return;
+        }
+
+        uint256 sheeshaReward;
+        
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, lastBlockPlus100);
+
+        for(uint256 i = 1; i <= multiplier; i++) {
+            uint256 blockReward = (lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
+            sheeshaReward = sheeshaReward.add(blockReward);
+            lpRewards = lpRewards.sub(blockReward);
+        }
+
+        pool.accSheeshaPerShare = pool.accSheeshaPerShare.add(sheeshaReward.mul(1e12).div(lpSupply));
+        pool.lastRewardBlock = lastBlockPlus100;
+    }
+
+    // Return reward multiplier over the given _from to _to block.
+    function getMultiplier(uint256 _from, uint256 _to) public pure returns (uint256) {
+        return _to.sub(_from);
+    }
+
+    function updatePoolRequest(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        
+        if(multiplier <=100) {
+            updatePool(_pid);
+        } else {
+            updatePoolBy100(_pid);
+        }
     }
 
     // Deposit LP tokens to MasterChef for SHEESHA allocation.
@@ -156,10 +257,21 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
     }
 
     function _deposit(address _depositFor, uint256 _pid, uint256 _amount) internal nonReentrant {
+        if(!isUserExisting(msg.sender)) {
+            userList[userCount] = msg.sender;
+            userCount++;
+            isExisting[msg.sender] = true;
+        }
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_depositFor];
 
-        updatePool(_pid);
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        
+        if(multiplier <=100) {
+            updatePool(_pid);
+        } else {
+            updatePoolBy100(_pid);
+        }
 
         if(!isActive(_pid, _depositFor)) {
             user.status = true;
@@ -185,13 +297,20 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
-        updatePool(_pid);
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        
+        if(multiplier <=100) {
+            updatePool(_pid);
+        } else {
+            updatePoolBy100(_pid);
+        }
+        
         uint256 pending = user.amount.mul(pool.accSheeshaPerShare).div(1e12).sub(user.rewardDebt);
         safeSheeshaTransfer(msg.sender, pending);
         if(_amount > 0) {
             uint256 feePercent = 4;
             //2 years
-            if(user.checkpoint.add(730 days) <= block.timestamp) {
+            if(block.timestamp <= user.checkpoint.add(730 days)) {
                 //4-> unstake fee interval
                 feePercent = uint256(100).sub(getElapsedMonthsCount(user.checkpoint).mul(4));
             }
@@ -203,12 +322,53 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         user.rewardDebt = user.amount.mul(pool.accSheeshaPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);
     }
+    
+    // Withdraw LP tokens or claim rewrads if amount is 0
+    function claimRewards(uint256 _pid) public {
+        if(!isUserExisting(msg.sender)) {
+            userList[userCount] = msg.sender;
+            userCount++;
+            isExisting[msg.sender] = true;
+        }
+        PoolInfo storage pool = poolInfo[_pid];
+        (uint256 _userStakeAount,,,) = lpVault.userInfo(_pid, msg.sender);
+
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        
+        if(multiplier <=100) {
+            updatePool(_pid);
+        } else {
+            updatePoolBy100(_pid);
+        }
+        
+        uint256 pending = _userStakeAount.mul(pool.accSheeshaPerShare).div(1e12).sub(rewardDebtInfo[msg.sender]);
+        safeSheeshaTransfer(msg.sender, pending);
+        rewardDebtInfo[msg.sender] = _userStakeAount.mul(pool.accSheeshaPerShare).div(1e12);
+        emit WithdrawRewards(msg.sender, _pid, pending);
+    }
+    
+    
+    function isUserExisting(address _who)
+        public
+        view
+        returns (bool)
+    {
+        return isExisting[_who];
+    }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        pool.lpToken.safeTransfer(address(msg.sender), user.amount);
+        uint256 feePercent = 4;
+        //2 years
+        if(block.timestamp <= user.checkpoint.add(730 days)) {
+            //4-> unstake fee interval
+            feePercent = uint256(100).sub(getElapsedMonthsCount(user.checkpoint).mul(4));
+        }
+        uint256 fees = user.amount.mul(feePercent).div(100);
+        pool.lpToken.safeTransfer(feeWallet, fees);
+        pool.lpToken.safeTransfer(address(msg.sender), user.amount.sub(fees));
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
@@ -236,12 +396,49 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSheeshaPerShare = pool.accSheeshaPerShare;
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply0 = pool.lpToken.balanceOf(address(lpVault));
+        
+        uint256 lpSupply1 = pool.lpToken.balanceOf(address(this));
+        
+        uint256 lpSupply = lpSupply0.add(lpSupply1);
+        uint256 _lpRewards = lpRewards;
+
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
-            uint256 sheeshaReward = (lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
-            accSheeshaPerShare = accSheeshaPerShare.add(sheeshaReward.mul(1e12).div(lpSupply));
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 sheeshaReward;
+
+            for(uint256 i = 1; i <= multiplier; i++) {
+                uint256 blockReward = (_lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
+                sheeshaReward = sheeshaReward.add(blockReward);
+                _lpRewards = _lpRewards.sub(blockReward);
+            }
         }
         return user.amount.mul(accSheeshaPerShare).div(1e12).sub(user.rewardDebt);
+    }
+    
+    // View function to see pending SHEESHAs on frontend.
+    function pendingSheeshaOld(uint256 _pid, address _user) external view returns (uint256) {
+        PoolInfo storage pool = poolInfo[_pid];
+        (uint256 _amount,,,) = lpVault.userInfo(_pid, _user);
+        uint256 accSheeshaPerShare = pool.accSheeshaPerShare;
+        uint256 lpSupply0 = pool.lpToken.balanceOf(address(lpVault));
+        
+        uint256 lpSupply1 = pool.lpToken.balanceOf(address(this));
+        uint256 _lpRewards = lpRewards;
+        
+        uint256 lpSupply = lpSupply0.add(lpSupply1);
+        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 sheeshaReward;
+
+            for(uint256 i = 1; i <= multiplier; i++) {
+                uint256 blockReward = (_lpRewards.mul(sheeshaPerBlock).div(percentageDivider)).mul(pool.allocPoint).div(totalAllocPoint);
+                sheeshaReward = sheeshaReward.add(blockReward);
+                _lpRewards = _lpRewards.sub(blockReward);
+            }
+            accSheeshaPerShare = accSheeshaPerShare.add(sheeshaReward.mul(1e12).div(lpSupply));
+        }
+        return _amount.mul(accSheeshaPerShare).div(1e12).sub(rewardDebtInfo[msg.sender]);
     }
 
     function isActive(uint256 _pid, address _user) public view returns(bool) {
