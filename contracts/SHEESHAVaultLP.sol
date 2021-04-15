@@ -86,22 +86,18 @@ contract SHEESHALPVault is Ownable, ReentrancyGuard {
     constructor(
         SHEESHA _sheesha,
         SHEESHAVaultLP _lpVault,
-        IERC20 lpToken_
+        IERC20 lpToken_,
+        uint256 _startBlock,
+        uint256 _lpRewards
     ) {
         sheesha = _sheesha;
-        startBlock = block.number;
+        startBlock = _startBlock;
+        lpRewards = _lpRewards;
         lpVault = _lpVault;
-        IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
-        lpToken_.safeApprove(msg.sender, uint256(-1));
     }
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
-    }
-    
-    function initialize(uint256 _startBlock, uint256 _lpRewards) public onlyOwner {
-        startBlock = _startBlock;
-        lpRewards = _lpRewards;
     }
 
     // Add a new lp to the pool. Can only be called by the owner.

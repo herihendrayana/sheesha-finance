@@ -73,13 +73,11 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
     );
 
     constructor(
-        SHEESHA _sheesha
+        SHEESHA _sheesha,
+        uint256 _startBlock;
+        uint256 _tokenRewards;
     ) {
         sheesha = _sheesha;
-        IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
-    }
-
-    function initialize(uint256 _startBlock, uint256 _tokenRewards) public onlyOwner {
         startBlock = _startBlock;
         tokenRewards = _tokenRewards;
     }
@@ -172,7 +170,7 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
         pool.accSheeshaPerShare = pool.accSheeshaPerShare.add(sheeshaReward.mul(1e12).div(tokenSupply));
         pool.lastRewardBlock = block.number;
     }
-    
+
     function updatePoolBy100(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         
