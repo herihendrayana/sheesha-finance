@@ -80,7 +80,6 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
         sheesha = _sheesha;
         startBlock = _startBlock;
         tokenRewards = _tokenRewards;
-        IERC20(sheesha).safeApprove(msg.sender, uint256(-1));
     }
 
     function poolLength() external view returns (uint256) {
