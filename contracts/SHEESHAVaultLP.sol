@@ -175,7 +175,7 @@ contract SHEESHAVaultLP is Ownable, ReentrancyGuard {
         PoolInfo storage pool = poolInfo[_pid];
         uint256 lastBlockPlus100 = (pool.lastRewardBlock + 100);
 
-        if (lastBlockPlus100 <= pool.lastRewardBlock) {
+        if (lastBlockPlus100 >= block.number) {
             return;
         }
         

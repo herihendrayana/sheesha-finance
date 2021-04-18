@@ -176,7 +176,7 @@ contract SHEESHAVault is Ownable, ReentrancyGuard {
         
         uint256 lastBlockPlus100 = (pool.lastRewardBlock + 100);
 
-        if (lastBlockPlus100 <= pool.lastRewardBlock) {
+        if (lastBlockPlus100 >= block.number) {
             return;
         }
         uint256 tokenSupply = pool.token.balanceOf(address(this));
